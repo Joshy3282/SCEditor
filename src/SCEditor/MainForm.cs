@@ -484,13 +484,10 @@ namespace SCEditor
                 DialogResult result = fbd.ShowDialog();
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
-                    int i = 0;
-                    foreach (var shape in this._scFile.GetShapes())
+                    foreach (var shape in _scFile.GetExports().OfType<Export>())
                     {
-                        foreach (var chunk in shape.Children)
-                        {
-                            chunk.Render(new RenderingOptions()).Save(fbd.SelectedPath + "/Chunk_" + i++ + ".png");
-                        }
+                        string filePath = Combine(fbd.SelectedPath, $"{shape.GetName()}.png");
+                        shape.Render(new RenderingOptions()).Save(filePath, ImageFormat.Png);
                     }
                 }
             }
@@ -509,10 +506,28 @@ namespace SCEditor
                     DialogResult result1 = fbd.ShowDialog();
                     if (result1 == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                     {
-                        int i = 0;
-                        foreach (var shape in this._scFile.GetShapes())
+                        foreach (var shape in this._scFile.GetExports().OfType<Export>())
                         {
-                            shape.Render(new RenderingOptions()).Save(fbd.SelectedPath + "/Shape_" + i++ + ".png");
+                            try
+                            {
+                                var bitmap = shape.Render(new RenderingOptions());
+                                if (bitmap != null)
+                                {
+                                    string filePath = Path.Combine(fbd.SelectedPath, $"{shape.GetName()}.png");
+
+                                    bitmap.Save(filePath, ImageFormat.Png);
+                    
+                                    Console.WriteLine($"Successfully saved: {filePath}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Render for shape {shape.GetName()} returned null.");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error saving shape {shape.GetName()}: {ex.Message}");
+                            }
                         }
                     }
                 }
@@ -546,6 +561,10 @@ namespace SCEditor
                         {
                             RenderingOptions options = new RenderingOptions() { InternalRendering = true, ViewPolygons = viewPolygonsToolStripMenuItem.Checked };
                             data.Render(options).Save(dlg.FileName, System.Drawing.Imaging.ImageFormat.Png);
+                        } 
+                        else if (data.GetDataType() == 7 || data.GetDataType() == 7)
+                        {
+                            ((Export) data).Render(new RenderingOptions()).Save(dlg.FileName, ImageFormat.Png);
                         }
                         else
                         {

@@ -145,41 +145,43 @@ namespace SCEditor.ScOld
                     // FINAL SIZE WITH MATRIX = POINTS
                     for (int shapeIndex = 0; shapeIndex < Children.Count; shapeIndex++)
                     {
-                        Shape shapeToRender = (Shape)Children[shapeIndex];
-                        Matrix matrixData = new Matrix(1, 0, 0, 1, 0, 0);
-
-                        int matrixIdx = -1;
-
-                        if (options.editedMatrixs.Count > 0)
+                        if (Children[shapeIndex] is Shape)
                         {
-                            matrixIdx = options.editedMatrixs.FindIndex(data => data.childrenId == shapeToRender.Id);
-                        }    
+                            Shape shapeToRender = (Shape)Children[shapeIndex];
+                            Matrix matrixData = new Matrix(1, 0, 0, 1, 0, 0);
 
-                        if (matrixIdx != -1)
-                        {
-                            matrixData = options.editedMatrixs[matrixIdx].matrixData;
+                            int matrixIdx = -1;
 
-                            foreach (ShapeChunk chunk in shapeToRender.GetChunks())
+                            if (options.editedMatrixs.Count > 0)
                             {
-                                PointF[] newXY = new PointF[chunk.XY.Length];
+                                matrixIdx = options.editedMatrixs.FindIndex(data => data.childrenId == shapeToRender.Id);
+                            }    
 
-                                for (int xyIdx = 0; xyIdx < newXY.Length; xyIdx++)
+                            if (matrixIdx != -1)
+                            {
+                                matrixData = options.editedMatrixs[matrixIdx].matrixData;
+
+                                foreach (ShapeChunk chunk in shapeToRender.GetChunks())
                                 {
-                                    float xNew = matrixData.Elements[4] + matrixData.Elements[0] * chunk.XY[xyIdx].X + matrixData.Elements[2] * chunk.XY[xyIdx].Y;
-                                    float yNew = matrixData.Elements[5] + matrixData.Elements[1] * chunk.XY[xyIdx].X + matrixData.Elements[3] * chunk.XY[xyIdx].Y;
+                                    PointF[] newXY = new PointF[chunk.XY.Length];
 
-                                    newXY[xyIdx] = new PointF(xNew, yNew);
+                                    for (int xyIdx = 0; xyIdx < newXY.Length; xyIdx++)
+                                    {
+                                        float xNew = matrixData.Elements[4] + matrixData.Elements[0] * chunk.XY[xyIdx].X + matrixData.Elements[2] * chunk.XY[xyIdx].Y;
+                                        float yNew = matrixData.Elements[5] + matrixData.Elements[1] * chunk.XY[xyIdx].X + matrixData.Elements[3] * chunk.XY[xyIdx].Y;
+
+                                        newXY[xyIdx] = new PointF(xNew, yNew);
+                                    }
+
+                                    A.AddRange(newXY);
                                 }
-
-                                A.AddRange(newXY);
+                            }
+                            else
+                            {
+                                PointF[] pointsXY = shapeToRender.Children.SelectMany(chunk => ((ShapeChunk)chunk).XY).ToArray();
+                                A.AddRange(pointsXY.ToArray());
                             }
                         }
-                        else
-                        {
-                            PointF[] pointsXY = shapeToRender.Children.SelectMany(chunk => ((ShapeChunk)chunk).XY).ToArray();
-                            A.AddRange(pointsXY.ToArray());
-                        }
-
                     }
 
                     using (var xyPath = new GraphicsPath())
@@ -200,7 +202,7 @@ namespace SCEditor.ScOld
                         var finalShape = new Bitmap(width, height);
                         Console.WriteLine($"Rendering export ({_exportName}): W:{finalShape.Width} H:{finalShape.Height}\n");
 
-                        foreach (Shape shape in Children)
+                        foreach (Shape shape in Children.OfType<Shape>())
                         {
                             Matrix matrixData = new Matrix(1, 0, 0, 1, 0, 0);
 
